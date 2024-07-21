@@ -34,11 +34,9 @@ function page() {
                     title: "Success",
                     text: response.data.message,
                 }).then(() => {
-                    localStorage.setItem('token', response.data.data);
-                    // const token = localStorage.getItem("token");
-
-                    localStorage.setItem('tokenRole', response.data.role);
-                    // const tokenRole = localStorage.getItem("tokenRole");
+                    localStorage.setItem('token', response.data.token);
+                    const token = localStorage.getItem("token");
+                    console.log("token: ", token);
 
                     router.push("../../admin/hotelBar/list");
                     // if (tokenRole == ) {
