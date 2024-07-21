@@ -1,11 +1,10 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { FaTrash } from 'react-icons/fa';
+import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import ReactPaginate from 'react-paginate';
 import axios from "axios"
 import Swal from 'sweetalert2';
-import Link from 'next/link';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import Loading from './loading';
 import LinkingWithSidebar from '../../components/LinkingWithSidebar'
@@ -13,19 +12,19 @@ import LinkingWithSidebar from '../../components/LinkingWithSidebar'
 function Page() {
     const [loading, setLoading] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
-    const [employees, setEmployees] = useState([]);
+    const [hotelApplications, setHotelApplications] = useState([]);
     const [currentPage, setCurrentPage] = useState(0); // Current page number
-    const [filteredEmployees, setFilteredEmployees] = useState([]); // Initialize with an empty array
-    const perPage = 10 // Number of items per page
+    const [filteredhotelApplications, setFilteredHotelApplications] = useState([]); // Initialize with an empty array
+    const perPage = 12 // Number of items per page
 
     useEffect(() => {
         const fetchData = async () => {
-            await axios.get(`http://localhost:5000/api/employees`)
+            await axios.get(`http://localhost:5000/api/hotel`)
                 .then((result) => {
-                    if (Array.isArray(result.data.data)) {
-                        console.log("result.data.data: ", result.data.data);
-                        setEmployees(result.data.data);
-                        setFilteredEmployees(result.data.data);
+                    if (Array.isArray(result.data.hotels)) {
+                        console.log("result.data: ", result.data.hotels);
+                        setHotelApplications(result.data.hotels);
+                        setFilteredHotelApplications(result.data.hotels);
                     } else {
                         console.error("API response is not an array:", result.data.data);
                     }
@@ -33,27 +32,28 @@ function Page() {
                 .catch((error) => {
                     console.error("API error:", error);
                 }).finally(() => {
-                    setLoading(false);
+                    setLoading(false); // Set loading to false after data is fetched
                 });
         };
         fetchData();
     }, [statusChange]);
 
-    const handleDelete = (id) => {
+    const handleStatusChangeAllow = (id) => {
         Swal.fire({
             title: 'Are you sure?',
-            text: 'You are about to delete this employee permanently.',
+            text: 'You are about to change the status.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
+            confirmButtonText: 'Yes, change it!',
         }).then(async (result) => {
-            console.log("Id in delete function: " + id);
+            console.log("Id in change status function: " + id);
             if (result.isConfirmed) {
                 try {
-                    const response = await axios.delete(`http://localhost:5000/api/employees/${id}`);
-                    if (response.data.status == 200) {
+                    console.log("Call the statuss change api");
+                    const response = await axios.put(`http://localhost:5000/api/hotel/status/allow/${id}`);
+                    if (response.data.status === 200) {
                         if (statusChange == true) {
                             setStatusChange(false);
                         }
@@ -61,16 +61,48 @@ function Page() {
                             setStatusChange(true);
                         }
                     } else {
-                        Swal.fire('Error!', 'Deletion failed.', 'error');
+                        Swal.fire('Error!', response.data.message);
                     }
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error!', 'Employee deletion failed.', 'error');
+                    Swal.fire('Error!', 'Status is already allowed.');
                 }
             }
         });
     };
 
+    const handleStatusChangeReject = (id) => {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'You are about to change the status.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, change it!',
+        }).then(async (result) => {
+            console.log("Id in change status function: " + id);
+            if (result.isConfirmed) {
+                try {
+                    console.log("Call the statuss change api");
+                    const response = await axios.put(`http://localhost:5000/api/hotel/status/reject/${id}`);
+                    if (response.data.status === 200) {
+                        if (statusChange == true) {
+                            setStatusChange(false);
+                        }
+                        else {
+                            setStatusChange(true);
+                        }
+                    } else {
+                        Swal.fire('Error!', 'Status is already pending.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error!', 'Status is already pending.');
+                }
+            }
+        });
+    };
 
     // Function to handle page change
     const handlePageChange = (selectedPage) => {
@@ -80,27 +112,27 @@ function Page() {
     // Calculate the start and end index for the current page
     const startIndex = currentPage * perPage;
     const endIndex = startIndex + perPage;
-    const displayedEmployee = filteredEmployees.slice(startIndex, endIndex);
+    const displayedHotelApplications = filteredhotelApplications.slice(startIndex, endIndex);
 
     const handleFilter = (e) => {
         const searchText = e.target.value.toLowerCase();
 
         if (searchText.trim() === '') {
-            setFilteredEmployees(employees); // Reset filtered data to all data
+            setFilteredHotelApplications(hotelApplications); // Reset filtered data to all data
         } else {
-            const filteredData = employees.filter((item) =>
+            const filteredData = hotelApplications.filter((item) =>
                 Object.values(item).some((value) =>
                     String(value).toLowerCase().includes(searchText)
                 )
             );
-            setFilteredEmployees(filteredData);
+            setFilteredHotelApplications(filteredData);
         }
 
         setCurrentPage(0);
     };
 
     if (loading) {
-        return <Loading />;
+        return <Loading />; // Render the Loading component if data is still being fetched
     }
 
     return (
@@ -112,7 +144,7 @@ function Page() {
                     <div>
                         <div className='flex justify-between items-center mb-4'>
                             <div className='flex'>
-                                <h2 className="text-2xl font-medium mb-3 text-black">Employees List</h2>
+                                <h2 className="text-2xl font-medium text-black">Applications List</h2>
                             </div>
                             <div className='flex'>
                                 <input
@@ -127,34 +159,41 @@ function Page() {
                             <table className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
                                 <thead className="bg-blue-400">
                                     <tr>
-                                        <th className="p-2 border border-gray-300 text-white">Sr#</th>
-                                        <th className="p-2 border border-gray-300 text-white">Name</th>
-                                        <th className="p-2 border border-gray-300 text-white">Position</th>
-                                        <th className="p-2 border border-gray-300 text-white">Mail</th>
-                                        <th className="p-2 border border-gray-300 text-white">Phone No.</th>
-                                        <th className="p-2 border border-gray-300 text-white">Assign Roles</th>
-                                        <th className="p-2 border border-gray-300 text-white">Action</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "6%" }}>Sr#</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "27%" }}>Hotel Name</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "15%" }}>Hotel Type</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "27%" }}>Address</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "10%" }}>Status</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "15%" }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {displayedEmployee && displayedEmployee.map((element, index) => (
+                                    {displayedHotelApplications && displayedHotelApplications.map((element, index) => (
                                         <tr className="hover:bg-gray-100">
                                             <td className="text-center border border-gray-300 text-gray-900 p-1">{index + 1}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.name}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.position}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.mail}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.phoneNumber}</td>
-                                            <td className="text-center border border-gray-200">
-                                                <div className='flex flex-row justify-center text-white bg-red-500 rounded-sm w-20 text-center mx-auto'>
-                                                    <Link href={`../../../admin/employees/assignRoles/${element._id}`}>
-                                                        Assign
-                                                    </Link>
+                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.hotelTitle}</td>
+                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.hoteltypes}</td>
+                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.address.city}, {element.address.region}</td>
+                                            <td className="text-center border border-gray-300 p-1">
+                                                <div className='flex flex-row space-x-3 justify-center'>
+                                                    {element.applyStatus === "pending" ? (
+                                                        <span className={`px-2 py-1 rounded-md text-white bg-yellow-500`}>
+                                                            {element.applyStatus}
+                                                        </span>
+                                                    ) : (
+                                                        <span className={`px-2 py-1 rounded-md text-white bg-green-600`}>
+                                                            {element.applyStatus}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="text-center border border-gray-300 p-1">
-                                                <div className='flex flex-row space-x-3 justify-center'>
-                                                    <button onClick={() => handleDelete(element._id)} className="text-red-600 hover:text-red-800">
-                                                        <FaTrash />
+                                                <div className='flex flex-row space-x-1 justify-center'>
+                                                    <button onClick={() => handleStatusChangeAllow(element._id)} className="text-white bg-red-500 p-1 rounded-md hover:text-red-800">
+                                                        Allow
+                                                    </button>
+                                                    <button onClick={() => handleStatusChangeReject(element._id)} className="text-white bg-red-500 p-1 rounded-md hover:text-red-800">
+                                                        Reject
                                                     </button>
                                                 </div>
                                             </td>
@@ -168,7 +207,7 @@ function Page() {
                                 previousLabel={<FaChevronLeft className="text-blue-400 ml-2 mb-0" />}
                                 nextLabel={<FaChevronRight className="text-blue-400 ml-2 mb-0" />}
                                 breakLabel={<span className="text-white">...</span>}
-                                pageCount={Math.ceil(employees.length / perPage)}
+                                pageCount={Math.ceil(hotelApplications.length / perPage)}
                                 marginPagesDisplayed={2}
                                 pageRangeDisplayed={10}
                                 onPageChange={handlePageChange}
@@ -187,7 +226,7 @@ function Page() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

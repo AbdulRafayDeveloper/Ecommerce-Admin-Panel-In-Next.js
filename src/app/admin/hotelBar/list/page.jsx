@@ -1,31 +1,32 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { FaTrash } from 'react-icons/fa';
+import Link from 'next/link';
 import Header from '../../components/Header';
 import ReactPaginate from 'react-paginate';
 import axios from "axios"
 import Swal from 'sweetalert2';
-import Link from 'next/link';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import Loading from './loading';
 import LinkingWithSidebar from '../../components/LinkingWithSidebar'
 
 function Page() {
     const [loading, setLoading] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
-    const [employees, setEmployees] = useState([]);
+    const [hotelBars, sethotelBars] = useState([]);
     const [currentPage, setCurrentPage] = useState(0); // Current page number
-    const [filteredEmployees, setFilteredEmployees] = useState([]); // Initialize with an empty array
-    const perPage = 10 // Number of items per page
+    const [filteredhotelBars, setfilteredhotelBars] = useState([]); // Initialize with an empty array
+    const perPage = 12 // Number of items per page
 
     useEffect(() => {
         const fetchData = async () => {
-            await axios.get(`http://localhost:5000/api/employees`)
+            await axios.get(`http://localhost:5000/api/hotelBar`)
                 .then((result) => {
-                    if (Array.isArray(result.data.data)) {
-                        console.log("result.data.data: ", result.data.data);
-                        setEmployees(result.data.data);
-                        setFilteredEmployees(result.data.data);
+                    console.log("result.data: ", result.data);
+                    if (Array.isArray(result.data)) {
+                        console.log("result.data.data: ", result.data);
+                        sethotelBars(result.data);
+                        setfilteredhotelBars(result.data);
                     } else {
                         console.error("API response is not an array:", result.data.data);
                     }
@@ -42,7 +43,7 @@ function Page() {
     const handleDelete = (id) => {
         Swal.fire({
             title: 'Are you sure?',
-            text: 'You are about to delete this employee permanently.',
+            text: 'You are about to delete this record permanently.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -52,7 +53,7 @@ function Page() {
             console.log("Id in delete function: " + id);
             if (result.isConfirmed) {
                 try {
-                    const response = await axios.delete(`http://localhost:5000/api/employees/${id}`);
+                    const response = await axios.delete(`http://localhost:5000/api/hotelBar/${id}`);
                     if (response.data.status == 200) {
                         if (statusChange == true) {
                             setStatusChange(false);
@@ -65,7 +66,7 @@ function Page() {
                     }
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Error!', 'Employee deletion failed.', 'error');
+                    Swal.fire('Error!', 'Deletion failed.', 'error');
                 }
             }
         });
@@ -80,20 +81,20 @@ function Page() {
     // Calculate the start and end index for the current page
     const startIndex = currentPage * perPage;
     const endIndex = startIndex + perPage;
-    const displayedEmployee = filteredEmployees.slice(startIndex, endIndex);
+    const displayedEmployee = filteredhotelBars.slice(startIndex, endIndex);
 
     const handleFilter = (e) => {
         const searchText = e.target.value.toLowerCase();
 
         if (searchText.trim() === '') {
-            setFilteredEmployees(employees); // Reset filtered data to all data
+            setfilteredhotelBars(hotelBars); // Reset filtered data to all data
         } else {
-            const filteredData = employees.filter((item) =>
+            const filteredData = hotelBars.filter((item) =>
                 Object.values(item).some((value) =>
                     String(value).toLowerCase().includes(searchText)
                 )
             );
-            setFilteredEmployees(filteredData);
+            setfilteredhotelBars(filteredData);
         }
 
         setCurrentPage(0);
@@ -110,9 +111,13 @@ function Page() {
                 <Header></Header>
                 <div className='p-4 bg-white mx-5 mt-3 rounded-lg shadow-lg'>
                     <div>
+                        <h2 className="text-2xl font-medium mb-3 text-black">Hotel Bars List</h2>
                         <div className='flex justify-between items-center mb-4'>
                             <div className='flex'>
-                                <h2 className="text-2xl font-medium mb-3 text-black">Employees List</h2>
+                                <Link href="../../../admin/hotelBar/add" className='text-sm w-28 h-8 flex items-center justify-center border border-blue-600 bg-white mr-3 rounded-xl transition duration-300 ease-in-out transform hover:scale-105 shadow-sm' passHref>
+                                    <span className='text-blue-600 font-medium'>Add New</span>
+                                    <FaPlus className="text-blue-600 ml-2 mb-0" />
+                                </Link>
                             </div>
                             <div className='flex'>
                                 <input
@@ -127,39 +132,33 @@ function Page() {
                             <table className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
                                 <thead className="bg-blue-400">
                                     <tr>
-                                        <th className="p-2 border border-gray-300 text-white">Sr#</th>
-                                        <th className="p-2 border border-gray-300 text-white">Name</th>
-                                        <th className="p-2 border border-gray-300 text-white">Position</th>
-                                        <th className="p-2 border border-gray-300 text-white">Mail</th>
-                                        <th className="p-2 border border-gray-300 text-white">Phone No.</th>
-                                        <th className="p-2 border border-gray-300 text-white">Assign Roles</th>
-                                        <th className="p-2 border border-gray-300 text-white">Action</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "30%" }}>Sr#</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "40%" }}>Label</th>
+                                        <th className="p-2 border border-gray-300 text-white" style={{ width: "30%" }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {displayedEmployee && displayedEmployee.map((element, index) => (
-                                        <tr className="hover:bg-gray-100">
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{index + 1}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.name}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.position}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.mail}</td>
-                                            <td className="text-center border border-gray-300 text-gray-900 p-1">{element.phoneNumber}</td>
-                                            <td className="text-center border border-gray-200">
-                                                <div className='flex flex-row justify-center text-white bg-red-500 rounded-sm w-20 text-center mx-auto'>
-                                                    <Link href={`../../../admin/employees/assignRoles/${element._id}`}>
-                                                        Assign
-                                                    </Link>
-                                                </div>
-                                            </td>
-                                            <td className="text-center border border-gray-300 p-1">
-                                                <div className='flex flex-row space-x-3 justify-center'>
-                                                    <button onClick={() => handleDelete(element._id)} className="text-red-600 hover:text-red-800">
-                                                        <FaTrash />
-                                                    </button>
-                                                </div>
+                                    {displayedEmployee && displayedEmployee.length > 0 ? (
+                                        displayedEmployee.map((element, index) => (
+                                            <tr className="hover:bg-gray-100">
+                                                <td className="text-center border border-gray-300 text-gray-900 p-1">{index + 1}</td>
+                                                <td className="text-center border border-gray-300 text-gray-900 p-1">{element.label}</td>
+                                                <td className="text-center border border-gray-300 p-1">
+                                                    <div className='flex flex-row space-x-3 justify-center'>
+                                                        <button onClick={() => handleDelete(element._id)} className="text-red-600 hover:text-red-800">
+                                                            <FaTrash />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="text-center border border-gray-300 text-gray-900 p-1">
+                                                No records found
                                             </td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -168,7 +167,7 @@ function Page() {
                                 previousLabel={<FaChevronLeft className="text-blue-400 ml-2 mb-0" />}
                                 nextLabel={<FaChevronRight className="text-blue-400 ml-2 mb-0" />}
                                 breakLabel={<span className="text-white">...</span>}
-                                pageCount={Math.ceil(employees.length / perPage)}
+                                pageCount={Math.ceil(hotelBars.length / perPage)}
                                 marginPagesDisplayed={2}
                                 pageRangeDisplayed={10}
                                 onPageChange={handlePageChange}

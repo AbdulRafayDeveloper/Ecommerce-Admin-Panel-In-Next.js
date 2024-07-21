@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import LinkingWithSidebar from '../../components/LinkingWithSidebar'
 import { FaUsers, FaComments, FaDollarSign } from 'react-icons/fa';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import Header from '../components/Header';
@@ -16,7 +17,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import Sidebar from '../components/Sidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -117,7 +117,7 @@ const DashboardOverview = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      <Sidebar overview="../../admin/overview" employeeList="../../admin/employees/list" />
+      <LinkingWithSidebar />
       <div className="flex-1 overflow-auto bg-gray-100">
         <Header />
         <div className="p-6">

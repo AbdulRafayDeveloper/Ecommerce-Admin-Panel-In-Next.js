@@ -4,28 +4,29 @@ import axios from "axios"
 import Swal from 'sweetalert2';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function page() {
     const router = useRouter();
+    const [loading, setLoading] = useState(false); // State to handle loading
     const [formdata, setFormData] = useState({
-        email: "",
+        mail: "",
         password: ""
     });
-
-    useEffect(() => {
-        const video = document.querySelector('.video-background');
-        if (video) {
-            video.play().catch(error => {
-                console.error("Video play failed:", error);
-            });
-        }
-    }, []);
 
     const handleLogin = async (e) => {
         try {
             e.preventDefault();
+            setLoading(true); // Set loading to true when form is submitted
 
-            const response = await axios.post(`/api/auth/login`, formdata);
+            if (!formdata.mail || !formdata.password) {
+                toast.error('Please fill all required fields');
+                setLoading(false);
+                return;
+            }
+
+            const response = await axios.post(`http://localhost:5000/api/employees/login`, formdata);
 
             if (response.data.status === 200) {
                 Swal.fire({
@@ -39,11 +40,12 @@ function page() {
                     localStorage.setItem('tokenRole', response.data.role);
                     // const tokenRole = localStorage.getItem("tokenRole");
 
-                    if (tokenRole == 1) {
-                        router.push("../../../app/page.jsx");
-                    } else {
-                        router.push("../../admin/overview");
-                    }
+                    router.push("../../admin/hotelBar/list");
+                    // if (tokenRole == ) {
+                    //     router.push("../../../app/page.jsx");
+                    // } else {
+                    //     router.push("../../admin/overview");
+                    // }
                 });
             } else {
                 Swal.fire({
@@ -58,63 +60,58 @@ function page() {
                 title: "Error",
                 text: error.response ? error.response.data.message : "Your Request has not been submitted. Try Again later!",
             });
+        } finally {
+            setLoading(false); // Reset loading when API call completes
         }
     }
 
     return (
-        <div className="bg-gray-100 text-gray-900 flex items-center justify-center min-h-screen relative overflow-hidden">
-            {/* Background Video */}
-            <video autoPlay muted loop className="absolute inset-0 w-full h-full object-cover z-0 video-background">
-                <source src="/assets/videos/Untitled design.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
-
-            <div className="relative z-10 max-w-lg mx-auto bg-gray-900 shadow-lg sm:rounded-lg p-6 sm:p-12 opacity-80">
-                <div className="mt-12 flex flex-col items-center">
-                    <form onSubmit={handleLogin} className="opacity-100">
-                        <h1 className="text-2xl xl:text-3xl font-extrabold text-center mb-6 text-white ">
-                            Log In
-                        </h1>
-                        <div className="w-full flex-1 mt-8">
-                            <div className="mx-auto max-w-xs">
-                                <input
-                                    type="email"
-                                    name="email"
-                                    id="email"
-                                    onChange={(e) => setFormData({ ...formdata, email: e.target.value })}
-                                    className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
-                                    placeholder="Enter your email" required />
-                                <input type="password"
-                                    name="password"
-                                    id="password"
-                                    onChange={(e) => setFormData({ ...formdata, password: e.target.value })}
-                                    className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                                    placeholder="Enter your password" required />
-                                <button
-                                    type="submit"
-                                    className="mt-5 tracking-wide font-semibold bg-indigo-500 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none">
-                                    <svg className="w-6 h-6 -ml-2" fill="none" stroke="currentColor" strokeWidth="2"
-                                        strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                                        <circle cx="8.5" cy="7" r="4" />
-                                        <path d="M20 8v6M23 11h-6" />
-                                    </svg>
-                                    <span className="ml-3">
-                                        Log In
-                                    </span>
-                                </button>
-                                <p className="mt-6 text-xs text-gray-300 text-center">
-                                    Don't have account? Please
-                                    <Link href="../../auth/register" className="border-b border-gray-300 border-dotted text-white font-bold mx-2">
-                                        Register
-                                    </Link>
-                                </p>
+        <>
+            <ToastContainer></ToastContainer>
+            <div className="bg-gray-100 text-gray-900 flex items-center justify-center min-h-screen relative overflow-hidden">
+                <div className="relative z-10 max-w-lg mx-auto bg-black shadow-lg sm:rounded-lg p-6 sm:p-12 opacity-80">
+                    <div className="mt-12 flex flex-col items-center">
+                        <form onSubmit={handleLogin} className="opacity-100">
+                            <h1 className="text-2xl xl:text-3xl font-extrabold text-center mb-6 text-white ">
+                                Log In
+                            </h1>
+                            <div className="w-full flex-1 mt-8">
+                                <div className="mx-auto max-w-xs">
+                                    <input
+                                        type="mail"
+                                        name="mail"
+                                        id="mail"
+                                        onChange={(e) => setFormData({ ...formdata, mail: e.target.value })}
+                                        className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
+                                        placeholder="Enter your mail" />
+                                    <input type="password"
+                                        name="password"
+                                        id="password"
+                                        onChange={(e) => setFormData({ ...formdata, password: e.target.value })}
+                                        className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                                        placeholder="Enter your password" />
+                                    <div className="flex items-center justify-end mt-8">
+                                        <button
+                                            className={`bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                                            type="submit"
+                                            disabled={loading}
+                                        >
+                                            {loading ? 'Loading...' : 'Login'}
+                                        </button>
+                                    </div>
+                                    <p className="mt-6 text-xs text-gray-300 text-center">
+                                        Don't have account? Please
+                                        <Link href="../../auth/register" className="border-b border-gray-300 border-dotted text-white font-bold mx-2">
+                                            Register
+                                        </Link>
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
 
