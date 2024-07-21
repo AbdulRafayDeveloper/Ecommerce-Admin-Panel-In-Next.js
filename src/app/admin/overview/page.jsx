@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import LinkingWithSidebar from '../../components/LinkingWithSidebar'
+import LinkingWithSidebar from '../components/LinkingWithSidebar'
 import { FaUsers, FaComments, FaDollarSign } from 'react-icons/fa';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import Header from '../components/Header';
