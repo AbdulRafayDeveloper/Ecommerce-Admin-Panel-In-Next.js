@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import LinkingWithSidebar from '../../components/LinkingWithSidebar'
 import Header from '@/app/admin/components/Header';
 import Swal from "sweetalert2";
@@ -7,6 +7,7 @@ import axios from "axios";
 import { useRouter } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { decodeJWT } from "../../components/DecodeJWT";
 
 function Page() {
     const router = useRouter();
@@ -15,6 +16,14 @@ function Page() {
         label: "",
         thumb: ""
     })
+
+    useEffect(() => {
+        const decodedData = decodeJWT();
+        console.log("decodedData: ", decodedData);
+        if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+            router.push("../../auth/login");
+        }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

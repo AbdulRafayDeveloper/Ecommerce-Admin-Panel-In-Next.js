@@ -1,10 +1,12 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import LinkingWithSidebar from '../components/LinkingWithSidebar'
 import { FaUsers, FaComments, FaDollarSign } from 'react-icons/fa';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import Header from '../components/Header';
+import { decodeJWT } from "../components/DecodeJWT";
+import { useRouter } from 'next/navigation';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,6 +33,7 @@ ChartJS.register(
 );
 
 const DashboardOverview = () => {
+  const router = useRouter();
   const lineData = {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
     datasets: [
@@ -114,6 +117,14 @@ const DashboardOverview = () => {
       },
     },
   };
+
+  useEffect(() => {
+    const decodedData = decodeJWT();
+    console.log("decodedData: ", decodedData);
+    if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+      router.push("../auth/login");
+    }
+  }, []);
 
   return (
     <div className="flex flex-col md:flex-row h-screen">

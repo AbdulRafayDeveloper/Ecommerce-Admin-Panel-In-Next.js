@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaEdit } from 'react-icons/fa';
+import { FaTrash } from 'react-icons/fa';
 import Link from 'next/link';
 import LinkingWithSidebar from '../../components/LinkingWithSidebar'
 import Header from '../../components/Header';
@@ -8,10 +8,13 @@ import ReactPaginate from 'react-paginate';
 import axios from "axios"
 import Swal from 'sweetalert2';
 import Image from 'next/image';
-import { FaFileExport, FaPlus, FaDownload, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import Loading from './loading'; // Import the Loading component
+import { decodeJWT } from "../../components/DecodeJWT";
+import { useRouter } from 'next/navigation';
 
 function Page() {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
     const [hotelTypes, sethotelTypes] = useState([]);
@@ -20,6 +23,12 @@ function Page() {
     const perPage = 12 // Number of items per page
 
     useEffect(() => {
+        const decodedData = decodeJWT();
+        console.log("decodedData: ", decodedData);
+        if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+            router.push("../../auth/login");
+        }
+
         const fetchData = async () => {
             await axios.get(`http://localhost:5000/api/hotelTypes`)
                 .then((result) => {

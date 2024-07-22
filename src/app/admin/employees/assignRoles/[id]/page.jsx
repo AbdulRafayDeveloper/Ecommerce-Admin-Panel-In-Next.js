@@ -5,6 +5,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useRouter } from 'next/navigation';
 import LinkingWithSidebar from '../../../components/secondLayer/LinkingWithSidebar';
+import { decodeJWT } from "../../../components/DecodeJWT";
 
 function Page({ params }) {
     const router = useRouter();
@@ -14,6 +15,12 @@ function Page({ params }) {
     const [selectedRoles, setSelectedRoles] = useState([]);
 
     useEffect(() => {
+        const decodedData = decodeJWT();
+        console.log("decodedData: ", decodedData);
+        if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+            router.push("../../../auth/login");
+        }
+
         const getUserRecord = async () => {
             try {
                 const response = await axios.get(`http://localhost:5000/api/employee/${id}`);

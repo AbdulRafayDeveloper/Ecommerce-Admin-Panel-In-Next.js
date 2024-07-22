@@ -8,9 +8,12 @@ import ReactPaginate from 'react-paginate';
 import axios from "axios"
 import Swal from 'sweetalert2';
 import { FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import Loading from './loading'; // Import the Loading component
+import Loading from './loading';
+import { decodeJWT } from "../../components/DecodeJWT";
+import { useRouter } from 'next/navigation';
 
 function Page() {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
     const [hotelServices, sethotelServices] = useState([]);
@@ -19,6 +22,12 @@ function Page() {
     const perPage = 12 // Number of items per page
 
     useEffect(() => {
+        const decodedData = decodeJWT();
+        console.log("decodedData: ", decodedData);
+        if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+            router.push("../../auth/login");
+        }
+        
         const fetchData = async () => {
             await axios.get(`http://localhost:5000/api/hotelService`)
                 .then((result) => {

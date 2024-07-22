@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { decodeJWT } from "../../admin/components/DecodeJWT";
 
 function page() {
     const router = useRouter();
@@ -14,6 +15,13 @@ function page() {
         mail: "",
         password: ""
     });
+
+    useEffect(() => {
+        const decodedData = decodeJWT();
+        if (decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee")) {
+            router.push("../../admin/overview");
+        }
+    }, [])
 
     const handleLogin = async (e) => {
         try {
@@ -37,13 +45,7 @@ function page() {
                     localStorage.setItem('token', response.data.token);
                     const token = localStorage.getItem("token");
                     console.log("token: ", token);
-
-                    router.push("../../admin/hotelBar/list");
-                    // if (tokenRole == ) {
-                    //     router.push("../../../app/page.jsx");
-                    // } else {
-                    //     router.push("../../admin/overview");
-                    // }
+                    router.push("../../admin/employees/list");
                 });
             } else {
                 Swal.fire({

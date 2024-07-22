@@ -9,8 +9,11 @@ import Link from 'next/link';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import Loading from './loading';
 import LinkingWithSidebar from '../../components/LinkingWithSidebar'
+import { decodeJWT } from "../../components/DecodeJWT";
+import { useRouter } from 'next/navigation';
 
 function Page() {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
     const [employees, setEmployees] = useState([]);
@@ -19,6 +22,12 @@ function Page() {
     const perPage = 10 // Number of items per page
 
     useEffect(() => {
+        const decodedData = decodeJWT();
+        console.log("decodedData: ", decodedData);
+        if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
+            router.push("../../auth/login");
+        }
+
         const fetchData = async () => {
             await axios.get(`http://localhost:5000/api/employees`)
                 .then((result) => {
