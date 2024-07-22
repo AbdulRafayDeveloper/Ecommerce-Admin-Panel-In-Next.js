@@ -3,7 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { FaUsers } from 'react-icons/fa';
 
-function Sidebar({ overview, applications, hotelTypes, hotelBar, hotelInfrastructure, hotelNutrition, hotelService, hotelTransferServices, employees, roles }) {
+function Sidebar({ overview, applications, hotelTypes, hotelBar, hotelInfrastructure, hotelNutrition,
+    hotelService, hotelTransferServices, employees, roles, accessibleEnvironments, beautyAndHealth,
+    childrenFacilities, conferenceFacilities, entertainmentAndSports, hotel_transport,
+    roomAmenities, seaAndBeach, staff }) {
     return (
         <div className='my-1'>
             <nav className="bg-white text-black w-full lg:w-full md:w-full h-screen p-6 rounded-lg shadow-lg overflow-y-auto">
@@ -51,6 +54,43 @@ function Sidebar({ overview, applications, hotelTypes, hotelBar, hotelInfrastruc
                     <li className="flex items-center space-x-3">
                         <FaUsers className="text-red-500" size={20} />
                         <Link href={roles} className="hover:text-blue-500 text-lg font-light">Roles</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-yellow-400" size={20} />
+                        <Link href={accessibleEnvironments} className="hover:text-blue-500 text-lg font-light">Accessible Environments</Link>
+                    </li>
+
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-red-500" size={20} />
+                        <Link href={beautyAndHealth} className="hover:text-blue-500 text-lg font-light">Beauty And Health</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-yellow-400" size={20} />
+                        <Link href={childrenFacilities} className="hover:text-blue-500 text-lg font-light">Children Facilities</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-red-500" size={20} />
+                        <Link href={conferenceFacilities} className="hover:text-blue-500 text-lg font-light">Conference Facilities</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-yellow-400" size={20} />
+                        <Link href={entertainmentAndSports} className="hover:text-blue-500 text-lg font-light">Entertainment And Sports</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-red-500" size={20} />
+                        <Link href={hotel_transport} className="hover:text-blue-500 text-lg font-light">Hotel Transport</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-yellow-400" size={20} />
+                        <Link href={roomAmenities} className="hover:text-blue-500 text-lg font-light">Room Amenities</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-red-500" size={20} />
+                        <Link href={seaAndBeach} className="hover:text-blue-500 text-lg font-light">Sea And Beach</Link>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                        <FaUsers className="text-yellow-400" size={20} />
+                        <Link href={staff} className="hover:text-blue-500 text-lg font-light">Staff</Link>
                     </li>
                 </ul>
             </nav>
