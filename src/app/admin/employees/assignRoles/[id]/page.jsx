@@ -23,7 +23,7 @@ function Page({ params }) {
 
         const getUserRecord = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/employee/${id}`);
+                const response = await axios.get(`http://localhost:5000/api/user/${id}`);
                 // console.log("Employee data: ", response.data.data);
                 const employeeData = response.data.data;
 
