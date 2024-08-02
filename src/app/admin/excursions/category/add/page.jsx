@@ -1,5 +1,5 @@
-"use client"
-import React, { useState, useEffect } from 'react'
+"use client";
+import React, { useState, useEffect } from 'react';
 import Header from '@/app/admin/components/Header';
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -13,20 +13,30 @@ function Page() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formdata, setFormData] = useState({
-        color: "",
+        icon: "",
         label: ""
     });
-    const [colorcode, setcolorcode] = useState('#000000')
+    const [iconList, setIconList] = useState([]); // Initialize as an empty array
+    const [selectedIconName, setSelectedIconName] = useState('');
 
-    useEffect(()=>{
-        console.log('Form data color: ',formdata.color)
-        setcolorcode(formdata.color)
-        console.log('Set color :',colorcode)
-    },[])
+    useEffect(() => {
+        // Fetch the list of icons from the API
+        const fetchIcons = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/icons');
+                setIconList(response.data || []);
+                console.log(response.data); // Ensure icons is an array of objects
+            } catch (error) {
+                console.error("Failed to fetch icons:", error);
+                toast.error('Failed to fetch icon list');
+            }
+        };
+
+        fetchIcons();
+    }, []);
 
     useEffect(() => {
         const decodedData = decodeJWT();
-        console.log("decodedData: ", decodedData);
         if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
             router.push("../../auth/login");
         }
@@ -36,26 +46,19 @@ function Page() {
         e.preventDefault();
         setLoading(true);
 
-        if (!formdata.label) {
-            toast.error('Please fill in label field');
-            setLoading(false);
-            return;
-        }
-        if (!formdata.color) {
-            toast.error('Please fill in color field');
+        if (!formdata.label || !formdata.icon) {
+            toast.error('Please fill all required fields');
             setLoading(false);
             return;
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/excursions/keypoints', formdata, {
+			console.log(formdata)
+            const response = await axios.post('http://localhost:5000/api/excursions/categories', formdata, {
                 headers: {
-                    'Content-Type': 'application/json', // Set Content-Type to application/json
+                    'Content-Type': 'application/json',
                 },
             });
-
-            console.log("response.data: ", response.data);
-            console.log("response.status: ", response.status);
 
             if (response.status === 200) {
                 Swal.fire({
@@ -63,7 +66,7 @@ function Page() {
                     title: "Success",
                     text: response.data.message,
                 }).then(() => {
-                    router.push("./../../../../admin/excursions/keypoints/list");
+                    router.push("./../../../../admin/excursions/category/list");
                 });
             } else {
                 Swal.fire({
@@ -81,7 +84,7 @@ function Page() {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <>
@@ -93,7 +96,7 @@ function Page() {
                     <div className='p-1'>
                         <div className='mx-auto max-w-[600px] mt-12'>
                             <form onSubmit={handleSubmit} name="employeeForm" id="employeeForm" className="bg-white shadow-md rounded px-12 pb-4 mb-4 py-2 mt-2" method="post">
-                                <h1 className='text-2xl font-medium text-center pb-7 text-gray-800 pt-4'>Add Excursion Keypoints</h1>
+                                <h1 className='text-2xl font-medium text-center pb-7 text-gray-800 pt-4'>Add Category</h1>
                                 <div className='flex flex-col gap-4 mb-4'>
                                     <div className="flex-1">
                                         <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="label">
@@ -109,28 +112,41 @@ function Page() {
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="color">
-                                            Color
-                                        </label>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="color"
-                                                className="w-16 h-12 p-0 border rounded"
-                                                name="color"
-                                                id="color"
-                                                onChange={(e) => setFormData({ ...formdata, color: e.target.value })}
-                                                value={formdata.color || '#000000'} 
-                                            />
-                                            <input
-                                                type="text"
-                                                className="w-full py-2 px-3 border rounded"
-                                                name="colorcode"
-                                                id="colorcode"
-                                                value={colorcode} 
-                                                placeholder={formdata.color || '#000000'}
-                                            />
-                                        </div>
-                                    </div>
+										<label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="icon">
+											Icon
+										</label>
+										<div className="flex items-center space-x-2">
+											<select
+												className="block w-full py-2 px-3 border rounded shadow-md"
+												name="icon"
+												id="icon"
+												onChange={(e) => {
+													const selectedIcon = e.target.value;
+													
+													const iconPath = selectedIcon.split('5000')[1];
+													setFormData({ ...formdata, icon: iconPath });
+													setSelectedIconName(iconPath); 
+												}}
+												value={formdata.icon}
+												placeholder={selectedIconName}
+											>
+												<option value="" className='text-gray-700'>Select an icon</option>
+												{iconList.length > 0 ? (
+													iconList.map((icon) => {
+														
+														const iconPath = icon.icon.split('5000')[1];
+														return (
+															<option key={icon._id} className='text-gray-700' value={icon.icon}>
+																{iconPath}
+															</option>
+														);
+													})
+												) : (
+													<option value="">No icons available</option>
+												)}
+											</select>
+										</div>
+									</div>
                                 </div>
                                 <div className="flex items-center justify-end mt-8">
                                     <button
@@ -147,7 +163,7 @@ function Page() {
                 </div>
             </div>
         </>
-    )
+    );
 }
 
-export default Page
+export default Page;
