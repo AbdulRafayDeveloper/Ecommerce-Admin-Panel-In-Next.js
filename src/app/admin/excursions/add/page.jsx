@@ -4,10 +4,12 @@ import Header from '@/app/admin/components/Header';
 import Swal from "sweetalert2";
 import axios from "axios";
 import { useRouter } from 'next/navigation';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LinkingWithSidebar from '../../components/LinkingWithSidebar';
 import { decodeJWT } from "../../components/DecodeJWT";
+import 'select2/dist/css/select2.min.css';
+import 'select2';
 
 function Page() {
     const router = useRouter();
@@ -31,17 +33,17 @@ function Page() {
         description: "",
         howToWork: "",
         typeOfVisit: {
-            typeOf: "",
+            typeof: "",
             maxPeople: 0
         },
-        duration: "",
+        duration: 0,
         withGuider: false,
         withBus: false,
         ticketPrice: 0,
-        priceFor:{ adult: 0, child: 0, retired: 0, student: 0 },
+        priceFor: { adult: 0, child: 0, retired: 0, student: 0 },
         excursionType: "",
         keyPoints: [],
-        consider: [""],
+        consider: [0],
         program: [{ description: "", duration: 0 }],
         start: [0],
         categories: [],
@@ -52,7 +54,6 @@ function Page() {
             uninclude: [""]
         }
     });
-
     useEffect(() => {
         const decodedData = decodeJWT();
         if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
@@ -90,6 +91,7 @@ function Page() {
             ...prev,
             thumbs: [...prev.thumbs, ...newFiles]
         }));
+        validateForm(formData)
     };
 
     const handleGoodPlaceChange = (index, e) => {
@@ -97,6 +99,7 @@ function Page() {
         const updatedGoodPlaces = [...formData.goodPlaces];
         updatedGoodPlaces[index] = { ...updatedGoodPlaces[index], [name]: value };
         setFormData(prev => ({ ...prev, goodPlaces: updatedGoodPlaces }));
+        validateForm(formData)
     };
 
     const handleThumbChange = (index, e) => {
@@ -104,6 +107,7 @@ function Page() {
         const updatedThumbs = [...formData.goodPlaceThumbs];
         updatedThumbs[index] = file;
         setFormData(prev => ({ ...prev, goodPlaceThumbs: updatedThumbs }));
+        validateForm(formData)
     };
 
     const addGoodPlace = () => {
@@ -112,6 +116,7 @@ function Page() {
             goodPlaces: [...prev.goodPlaces, { "title": "", "description": "" }],
             goodPlaceThumbs: [...prev.goodPlaceThumbs, null],
         }));
+        validateForm(formData)
     };
 
     const handleChange = (e) => {
@@ -123,36 +128,149 @@ function Page() {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
-    };
 
-    // Update a specific item in the include or uninclude arrays
-    const handlePriceDetailChange = (arrayName, arrayIndex, value) => {
-        setFormData(prev => ({
-            ...prev,
-            priceDetail: {
-                ...prev.priceDetail,
-                [arrayName]: prev.priceDetail[arrayName].map((item, i) =>
-                    i === arrayIndex ? value : item
-                )
-            }
-        }));
-    };
+    }
 
-    // Add a new entry to include and uninclude arrays
-    const addPriceDetail = () => {
-        setFormData(prev => ({
-            ...prev,
-            priceDetail: {
-                include: [...prev.priceDetail.include, ""],
-                uninclude: [...prev.priceDetail.uninclude, ""]
+    useEffect(() => {
+        validateForm(formData);
+    }, [formData]);
+
+
+    const validateForm = (formData) => {
+
+        let isValid = true
+
+        if (!formData.title || formData.title === "") {
+            isValid = false;
+            errors.title = "Fill in the title";
+        } else {
+            errors.title = "";
+            newErrors.title = ""
+        }
+
+        if (!formData.excursionType) {
+            isValid = false;
+            errors.excursionType = "Fill in the excursion type";
+        } else {
+            errors.excursionType = "";
+            newErrors.excursionType = ""
+        }
+
+        if (formData.address.country === "" || formData.address.country === "default") {
+            isValid = false;
+            console.log(formData.address.country)
+
+            errors['address.country'] = "Fill in the country"
+        } else {
+            errors['address.country'] = "";
+
+
+        }
+
+        if (!formData.departure || formData.departure === "") {
+            isValid = false;
+            errors.departure = "Fill in the departure";
+        } else {
+            errors.departure = "";
+        }
+
+        if (!formData.arrival || formData.arrival === "") {
+            isValid = false;
+            errors.arrival = "Fill in the arrival";
+        } else {
+            errors.arrival = "";
+        }
+
+        if (!formData.description || formData.description.length < 100) {
+            isValid = false;
+            errors.description = 'Description must be at least 100 characters long.';
+        } else {
+            errors.description = '';
+        }
+
+        if (!formData.duration || formData.duration <= 0) {
+            isValid = false;
+            errors.duration = "Fill in a valid duration";
+        } else {
+            errors.duration = "";
+        }
+
+        if (!formData.ticketPrice || formData.ticketPrice <= 0) {
+            isValid = false;
+            errors.ticketPrice = "Fill in a valid ticket price";
+        } else {
+            errors.ticketPrice = "";
+        }
+
+        if (!formData.thumbs || formData.thumbs.length < 5) {
+            isValid = false;
+            errors['thumbs'] = '';
+        } else {
+            errors['thumbs'] = '';
+        }
+
+        if (!formData.categories || formData.categories.length === 0) {
+            isValid = false;
+            errors.categories = "Select at least one category";
+        } else {
+            errors.categories = "";
+        }
+
+        if (formData.goodPlaces && Array.isArray(formData.goodPlaces)) {
+            formData.goodPlaces.forEach((place, index) => {
+                if (!place.title) {
+                    errors[`goodPlaces[${index}].title`] = 'Title is required.';
+                    isValid = false;
+                } else {
+                    errors[`goodPlaces[${index}].title`] = '';
+                }
+
+                if (!place.description) {
+                    errors[`goodPlaces[${index}].description`] = 'Description is required.';
+                    isValid = false;
+                } else {
+                    errors[`goodPlaces[${index}].description`] = '';
+                }
+            });
+        } else {
+            newErrors['goodPlaces'] = 'The goodPlaces field must be an array.';
+            isValid = false;
+        }
+
+        if (!formData.goodPlaces?.description) {
+            isValid = false;
+            errors.gooddesrip = "Add at least one good place";
+        } else {
+            errors.gooddesrip = "";
+        }
+
+        if (formData.goodPlaces.length !== formData.goodPlaceThumbs.length) {
+            errors['goodPlaceThumbs'] = 'Please upload a thumbnail for each good place.';
+            isValid = false;
+        }
+
+        // Ensure no thumbnail is missing
+        for (let i = 0; i < formData.goodPlaceThumbs.length; i++) {
+            if (!formData.goodPlaceThumbs[i]) {
+                errors['goodPlaceThumbs'] = 'Please upload a thumbnail for each good place.';
+                isValid = false;
+                break;
             }
-        }));
-    };
+        }
+
+        if (!formData.keyPoints || formData.keyPoints.length === 0) {
+            isValid = false;
+            errors['keyPoints'] = 'Select Keypoints';
+        } else {
+            errors['keyPoints'] = '';
+        }
+
+        return isValid
+    }
 
     const handlePriceForChange = (e) => {
         const { name, value } = e.target;
-    
-        // Update the priceFor object within formData state
+
         setFormData(prevState => ({
             ...prevState,
             priceFor: {
@@ -161,18 +279,26 @@ function Page() {
             }
         }));
     };
-    
-    
+
     const handleCategoryChange = (e) => {
         const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+
         setFormData(prev => {
-            const updatedCategories = [
-                ...new Set([
-                    ...prev.categories,
-                    ...selectedOptions
-                ])
-            ];
+
+            const categoriesSet = new Set(prev.categories);
+            const updatedCategories = selectedOptions.reduce((acc, option) => {
+                if (categoriesSet.has(option)) {
+                    categoriesSet.delete(option);
+                } else {
+
+                    categoriesSet.add(option);
+                }
+                return Array.from(categoriesSet);
+            }, [...prev.categories]);
+
+            validateForm(formData)
             return { ...prev, categories: updatedCategories };
+
         });
     };
 
@@ -202,11 +328,10 @@ function Page() {
         setFormData(prev => ({ ...prev, start: newStart }));
     };
 
-    // Handler for input change
     const handleConsiderChange = (index, event) => {
-        const newConsider = [...formData.start];
-        newConsider[index] = event.target.value;
-        setFormData(prev => ({ ...prev, consider: newConsider }));
+        const newconsider = [...formData.consider];
+        newconsider[index] = event.target.value;
+        setFormData(prev => ({ ...prev, consider: newconsider }));
     };
 
     const addConsider = () => {
@@ -224,15 +349,16 @@ function Page() {
             color: option.dataset.color
         }));
 
-        const existingkeyPoints = formData.keyPoints;
-        const updatedkeyPoints = [...existingkeyPoints, ...selectedOptions]
-            .filter((value, index, self) =>
-                index === self.findIndex((t) => (
-                    t.label === value.label
-                ))
-            );
+        setFormData(prev => {
 
-        setFormData(prev => ({ ...prev, keyPoints: updatedkeyPoints }));
+            const existingLabels = new Set(prev.keyPoints.map(kp => kp.label));
+            const selectedLabels = new Set(selectedOptions.map(kp => kp.label));
+
+            const updatedKeyPoints = prev.keyPoints.filter(kp => !selectedLabels.has(kp.label))
+                .concat(selectedOptions.filter(option => !existingLabels.has(option.label)));
+
+            return { ...prev, keyPoints: updatedKeyPoints };
+        });
     };
 
     const handleProgramChange = (index, event) => {
@@ -252,123 +378,187 @@ function Page() {
         setFormData(prev => ({ ...prev, program: newProgram }));
     };
 
-    // Prepare data for submission
-    // const formDataToSend = new FormData();
-    // formDataToSend.append('title', formData.title);
-    // formDataToSend.append('address', (formData.address));
-    // formDataToSend.append('thumbs', formData.thumbs);
-    // formDataToSend.append('departure', formData.departure);
-    // formDataToSend.append('arrival', formData.arrival);
-    // formDataToSend.append('description', formData.description);
-    // formDataToSend.append('howToWork', formData.howToWork);
-    // formDataToSend.append('typeOfVisit', (formData.typeOfVisit));
-    // formDataToSend.append('duration', formData.duration);
-    // formDataToSend.append('withGuider', formData.withGuider);
-    // formDataToSend.append('withBus', formData.withBus);
-    // formDataToSend.append('ticketPrice', formData.ticketPrice);
-    // formDataToSend.append('priceFor', (formData.priceFor));
-    // formDataToSend.append('excursionType', formData.excursionType);
-    // formDataToSend.append('keyPoints', (formData.keyPoints));
-    // formDataToSend.append('consider', (formData.consider));
-    // formDataToSend.append('program', (formData.program));
-    // formDataToSend.append('start', (formData.start));
-    // formDataToSend.append('categories', (formData.categories));
+    const removeGoodPlace = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            goodPlaces: prev.goodPlaces.filter((_, i) => i !== index),
+        }));
+    };
 
-    /*formData.goodPlaces.forEach((place, index) => {
-        formDataToSend.append(`goodPlaces[${index}][title]`, place.title);
-        formDataToSend.append(`goodPlaces[${index}][description]`, place.description);
-        if (formData.goodPlaceThumbs[index]) {
-            formDataToSend.append(`goodPlaceThumbs[${index}]`, formData.goodPlaceThumbs[index]);
-        }
-    });*/
+    const handlePriceDetailChange = (type, index, value) => {
+        const updatedArray = [...formData.priceDetail[type]];
+        updatedArray[index] = value;
+        setFormData({
+            ...formData,
+            priceDetail: {
+                ...formData.priceDetail,
+                [type]: updatedArray
+            }
+        });
+    };
 
-    // formDataToSend.append('priceDetail', (formData.priceDetail));
-    // console.log('Form title:', formData.title)
-    // console.log('FormData: ', formDataToSend.title)
-    // console.log("data thumbs", formData.thumbs)
-    // console.log("data thumbs", formData.goodPlaceThumbs)
-    // Send POST request
+    const addPriceDetail = () => {
+        setFormData({
+            ...formData,
+            priceDetail: {
+                include: [...formData.priceDetail.include, ""],
+                uninclude: [...formData.priceDetail.uninclude, ""]
+            }
+        });
+    };
 
-    // let errorMessage = "";
+    const removePriceDetail = (index) => {
+        const updatedInclude = formData.priceDetail.include.filter((_, i) => i !== index);
+        const updatedUninclude = formData.priceDetail.uninclude.filter((_, i) => i !== index);
 
-    // Validate required fields and default values
-    /* if (!formData.title || !formData.address.country || !formData.address.region || !formData.address.city ||
-         !formData.address.street || !formData.address.house || !formData.address.building ||
-         formData.duration === "" || formData.withGuider === undefined || formData.withBus === undefined ||
-         formData.ticketPrice === null || formData.excursionType === "" ||
-         formData.keyPoints.length === 0 || formData.consider.length === 0 ||
-         formData.start.length === 0 || formData.priceFor.length === 0 || formData.program.length === 0  || formData.priceDetail.include.length === 0 || 
-         formData.priceDetail.uninclude.length === 0) {
-         
-         isValid = false;
-         errorMessage = "Please fill in all required fields.";
-     }*/
+        setFormData({
+            ...formData,
+            priceDetail: {
+                include: updatedInclude,
+                uninclude: updatedUninclude
+            }
+        });
+    };
 
-    //formData.goodPlaces.length === 0
+    const handleCountry = (e) => {
+        const { name, value } = e.target;
 
-    // Validate goodPlaces and goodPlaceThumbs
-    /* formData.goodPlaces.forEach((place, index) => {
-         if (!place.title || !place.description || !formData.goodPlaceThumbs[index]) {
-             isValid = false;
-             errorMessage = "Each good place must have a title, description, and thumbnail.";
-         }
-     });
- 
-     // Validate priceDetail include and uninclude
-     formData.priceDetail.include.forEach((include) => {
-         if (include && formData.priceDetail.uninclude.length === 0) {
-             isValid = false;
-             errorMessage = "If any include is added in price details, there must be at least one uninclude.";
-         }
-     });
- */
+        setFormData(prev => {
+            const updatedFormData = {
+                ...prev,
+                address: {
+                    ...prev.address,
+                    country: value
+                }
+            };
+
+            validateForm(updatedFormData);
+
+            return updatedFormData;
+        });
+    };
+
+    const [errors, setErrors] = useState({
+        title: "",
+        region: "",
+        city: "",
+        street: "",
+        house: "",
+        building: "",
+        departure: "",
+        arrival: "",
+        description: "",
+        howToWork: "",
+        typeof: "",
+        maxPeople: "",
+        duration: "",
+        ticketPrice: "",
+        excursionType: "",
+        'keyPoints': "",
+        categories: "",
+        'goodPlaceThumbs': "",
+        building: "",
+        city: "",
+        country: "",
+        description: "",
+        house: "",
+        maxPeople: "",
+        region: "",
+        street: "",
+        typeof: "",
+        'address.country': "",
+        'goodPlaces': "",
+        'thumbs': ""
+    });
+    let [newErrors, setnew] = useState({ ...errors })
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         let isValid = true;
 
-        let errorMessage = '';
+        handleChange(e)
 
-        // Define required fields and nested fields
         const requiredFields = [
             'title',
-            'address.country',
-            'address.region',
-            'address.city',
-            'address.street',
-            'address.house',
-            'address.building',
             'departure',
             'arrival',
             'description',
-            'howToWork',
-            'typeOfVisit.typeOf',
-            'typeOfVisit.maxPeople',
             'duration',
             'ticketPrice',
             'excursionType',
             'keyPoints',
             'categories',
+            'goodPlaceThumbs',
+            'address.country',
             'goodPlaces',
-            'priceDetail.include',
-            'priceDetail.uninclude',
-            'goodPlaceThumbs'
+            'thumbs'
         ];
 
         // Check required fields
         requiredFields.forEach((field) => {
             const fieldParts = field.split('.');
             let value = formData;
-
             fieldParts.forEach(part => {
                 value = value && value[part];
             });
 
-            if (value === undefined || value === null || (Array.isArray(value) && value.length === 0) || (typeof value === 'object' && !Object.keys(value).length)) {
+            if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0) || (typeof value === 'object' && !Object.keys(value).length)) {
                 isValid = false;
-                errorMessage = 'Please fill out all required fields.';
+                newErrors[field] = 'This field is required.';
+            } else {
+                newErrors[field] = '';
+                newErrors.field = ""
             }
         });
+
+        if (formData.goodPlaces && Array.isArray(formData.goodPlaces)) {
+            formData.goodPlaces.forEach((place, index) => {
+                if (!place.title) {
+                    isValid = false;
+                    newErrors[`goodPlaces[${index}].title`] = 'Title is required.';
+                } else {
+                    newErrors[`goodPlaces[${index}].title`] = '';
+                }
+
+                if (!place.description) {
+                    isValid = false;
+                    newErrors[`goodPlaces[${index}].description`] = 'Description is required.';
+                } else {
+                    newErrors[`goodPlaces[${index}].description`] = '';
+                }
+            });
+        } else {
+            isValid = false;
+            newErrors['goodPlaces'] = 'The goodPlaces field must be an array.';
+        }
+
+        if (!formData.goodPlaceThumbs || formData.goodPlaceThumbs.length === 0) {
+            isValid = false;
+            newErrors['goodPlaceThumbs'] = 'Upload at least one thumbnail for good places.';
+        } else {
+            newErrors['goodPlaceThumbs'] = '';
+        }
+
+        if (!formData.thumbs || formData.thumbs.length < 5) {
+            isValid = false;
+            newErrors['thumbs'] = 'Upload at least 5 thumbnails for good places.';
+        } else {
+            newErrors['thumbs'] = '';
+        }
+
+        if (!formData.description || formData.description.length < 100) {
+            isValid = false;
+            newErrors['description'] = 'Description must be at least 100 characters long.';
+        } else {
+            newErrors['description'] = '';
+        }
+
+        if (!formData.keyPoints || formData.keyPoints.length === 0) {
+            isValid = false;
+            newErrors['keyPoints'] = 'Select keypoints';
+        } else {
+            newErrors['keyPoints'] = '';
+        }
 
         // Check numeric fields
         const numericFields = ['duration', 'ticketPrice'];
@@ -376,11 +566,28 @@ function Page() {
             const value = formData[field];
             if (isNaN(value) || value <= 0) {
                 isValid = false;
-                errorMessage = 'Please enter valid numbers for duration and ticket price.';
+                newErrors[field] = 'Please enter a valid number greater than zero.';
+            } else {
+                newErrors[field] = '';
             }
         });
 
-        
+        if (formData.goodPlaces.length !== formData.goodPlaceThumbs.length) {
+            errors['goodPlaceThumbs'] = 'Please upload a thumbnail for each good place.';
+            isValid = false;
+        }
+
+        // Ensure no thumbnail is missing
+        for (let i = 0; i < formData.goodPlaceThumbs.length; i++) {
+            if (!formData.goodPlaceThumbs[i]) {
+                newErrors['goodPlaceThumbs'] = 'Please upload a thumbnail for each good place.';
+                isValid = false;
+                break;
+            }
+        }
+
+        setErrors(newErrors);
+
         if (isValid) {
             try {
                 setLoading(true);
@@ -390,7 +597,7 @@ function Page() {
                     submissionData.append('thumbs', file);
                 });
 
-                submissionData.append('title', JSON.stringify(formData.title));
+                submissionData.append('title', formData.title);
                 submissionData.append('address', JSON.stringify(formData.address));
                 submissionData.append('goodPlaces', JSON.stringify(formData.goodPlaces));
 
@@ -426,17 +633,28 @@ function Page() {
                     }
                 });
 
-                console.log(response);
-                Swal.fire('Success!', "Form Submitted successfully", 'success');
-
+                if (response.data.status === 200) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: response.data.message,
+                    }).then(() => {
+                        router.push("./../../admin/excursions/list");
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: response.data.message,
+                    });
+                }
             } catch (error) {
-                console.error("Error submitting form:", error);
                 Swal.fire('Error!', "Form Not submitted", 'error');
             } finally {
                 setLoading(false);
             }
         } else {
-            Swal.fire('Error!', errorMessage, 'error');
+            Swal.fire('Error!', 'PLease resolve all the errors', 'error');
         }
     };
 
@@ -453,7 +671,8 @@ function Page() {
                                 <h1 className='text-2xl font-medium text-center pb-7 text-gray-800 pt-4'>Add Excursions</h1>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="title">Title</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-[13.9px]" htmlFor="title">Title <span className='text-red-600'>*</span></label>
+
                                         <input
                                             type="text"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -463,108 +682,106 @@ function Page() {
                                             placeholder="Enter title"
                                             value={formData.title}
                                         />
+                                        {newErrors.title && <p className="text-red-700 text-sm">{newErrors.title}</p>}
+
                                     </div>
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-country">Country</label>
-                                        <select
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-country"
-                                            id="address-country"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, country: e.target.value }
-                                            }))}
-                                            value={formData.address.country}
-                                        >
-                                            <option value="">Select Country</option>
-                                            <option value="Russia">Russia</option>
-                                            <option value="Abkhazia">Abkhazia</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-region">Region</label>
-                                        <input
-                                            type="text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-region"
-                                            id="address-region"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, region: e.target.value }
-                                            }))}
-                                            placeholder="Enter region"
-                                            value={formData.address.region}
-                                        />
+                                    <div className="flex flex-col space-y-4">
+                                        <h2 className="text-medium font-medium text-gray-800 ">Address Information</h2>
+                                        <div className="flex flex-col">
+                                            <select
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-country"
+                                                id="address-country"
+                                                onChange={handleCountry}
+                                                value={formData.address.country}
+                                            >
+                                                <option value="">Select Country <span className='text-red-600'>*</span></option>
+                                                <option value="Russia">Russia</option>
+                                                <option value="Abkhazia">Abkhazia</option>
+                                            </select>
+
+                                            {newErrors['address.country'] && <p className="text-red-700 text-sm">{newErrors['address.country']}</p>}
+
+                                        </div>
+                                        <div className="flex flex-col">
+
+                                            <input
+                                                type="text"
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-region"
+                                                id="address-region"
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    address: { ...prev.address, region: e.target.value }
+                                                }))}
+                                                placeholder="Enter region"
+                                                value={formData.address.region}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+
+                                            <input
+                                                type="text"
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-city"
+                                                id="address-city"
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    address: { ...prev.address, city: e.target.value }
+                                                }))}
+                                                placeholder="Enter city"
+                                                value={formData.address.city}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <input
+                                                type="text"
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-street"
+                                                id="address-street"
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    address: { ...prev.address, street: e.target.value }
+                                                }))}
+                                                placeholder="Enter street"
+                                                value={formData.address.street}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <input
+                                                type="text"
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-house"
+                                                id="address-house"
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    address: { ...prev.address, house: e.target.value }
+                                                }))}
+                                                placeholder="Enter house"
+                                                value={formData.address.house}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <input
+                                                type="text"
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                name="address-building"
+                                                id="address-building"
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    address: { ...prev.address, building: e.target.value }
+                                                }))}
+                                                placeholder="Enter building"
+                                                value={formData.address.building}
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-city">City</label>
-                                        <input
-                                            type="text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-city"
-                                            id="address-city"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, city: e.target.value }
-                                            }))}
-                                            placeholder="Enter city"
-                                            value={formData.address.city}
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-street">Street</label>
-                                        <input
-                                            type="text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-street"
-                                            id="address-street"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, street: e.target.value }
-                                            }))}
-                                            placeholder="Enter street"
-                                            value={formData.address.street}
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-house">House</label>
-                                        <input
-                                            type="text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-house"
-                                            id="address-house"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, house: e.target.value }
-                                            }))}
-                                            placeholder="Enter house"
-                                            value={formData.address.house}
-                                        />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="address-building">Building</label>
-                                        <input
-                                            type="text"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            name="address-building"
-                                            id="address-building"
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                address: { ...prev.address, building: e.target.value }
-                                            }))}
-                                            placeholder="Enter building"
-                                            value={formData.address.building}
-                                        />
-                                    </div>
                                     <div className="flex flex-col mb-4">
-                                        <h2 className="text-md font-semibold mb-2 text-gray-800">Add Good Place</h2>
+                                        <h2 className="text-md font-semibold mb-2 text-gray-800">Add Good Place <span className='text-red-600'>*</span></h2>
                                         {formData.goodPlaces.map((place, index) => (
-                                            <div key={index} className="flex flex-col mb-4">
+                                            <div key={index} className="flex flex-col mb-4  p-4 ">
                                                 <div className="flex flex-col mb-2">
-                                                    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor={`title-${index}`}>Title</label>
                                                     <input
                                                         type="text"
                                                         name="title"
@@ -574,9 +791,9 @@ function Page() {
                                                         onChange={(e) => handleGoodPlaceChange(index, e)}
                                                         placeholder="Enter title"
                                                     />
+                                                    {newErrors[`goodPlaces[${index}].title`] && <p className="text-red-700 text-sm">{newErrors[`goodPlaces[${index}].title`]}</p>}
                                                 </div>
                                                 <div className="flex flex-col mb-2">
-                                                    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor={`description-${index}`}>Description</label>
                                                     <textarea
                                                         name="description"
                                                         id={`description-${index}`}
@@ -585,9 +802,10 @@ function Page() {
                                                         onChange={(e) => handleGoodPlaceChange(index, e)}
                                                         placeholder="Enter description"
                                                     />
+                                                    {newErrors[`goodPlaces[${index}].description`] && <p className="text-red-700 text-sm">{newErrors[`goodPlaces[${index}].description`]}</p>}
                                                 </div>
                                                 <div className="flex flex-col mb-2">
-                                                    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor={`thumb-${index}`}>Thumbnail</label>
+                                                    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor={`thumb-${index}`}>Good Place Thumbnail</label>
                                                     <input
                                                         type="file"
                                                         name="thumb"
@@ -595,7 +813,15 @@ function Page() {
                                                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                         onChange={(e) => handleThumbChange(index, e)}
                                                     />
+                                                    {newErrors['goodPlaceThumbs'] && <p className="text-red-700 text-sm">{newErrors['goodPlaceThumbs']}</p>}
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    className="bg-red-500 text-white px-4 py-2 rounded shadow mt-2"
+                                                    onClick={() => removeGoodPlace(index)}
+                                                >
+                                                    Remove Good Place
+                                                </button>
                                             </div>
                                         ))}
                                         <button
@@ -605,16 +831,18 @@ function Page() {
                                             Add Another Good Place
                                         </button>
                                     </div>
+
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="thumbs">Thumbnails</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="thumbs">Thumbnails <span className='text-red-600'>*</span></label>
                                         <input
                                             type="file"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            className="shadow appearance-none border rounded  py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                             name="thumbs"
                                             id="thumbs"
                                             onChange={handleThumbfileChange}
                                             multiple
                                         />
+                                        {newErrors['thumbs'] && <p className="text-red-700 text-sm">{newErrors['thumbs']}</p>}
                                         <div className="mt-4">
                                             {formData.thumbs.length > 0 && (
                                                 <ul className="list-disc pl-5">
@@ -625,37 +853,46 @@ function Page() {
                                             )}
                                         </div>
                                     </div>
-
                                     <div className="flex flex-col mb-4">
                                         <h2 className="text-md font-semibold mb-2 text-gray-800">Add Price Details</h2>
+                                        <div>
+                                            <div className="flex flex-col mb-2">
+                                                {formData.priceDetail.include.map((include, i) => (
+                                                    <div key={i} className="flex items-center mb-2">
+                                                        <input
+                                                            type="text"
+                                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                            value={include}
+                                                            onChange={(e) => handlePriceDetailChange("include", i, e.target.value)}
+                                                            placeholder="Enter Include"
+                                                        />
 
-                                        <div className="flex flex-col mb-2">
-                                            <label className="block text-gray-700 text-base font-semibold mb-2">Include</label>
-                                            {formData.priceDetail.include.map((include, i) => (
-                                                <div key={i} className="flex items-center mb-2">
-                                                    <input
-                                                        type="text"
-                                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                        value={include}
-                                                        onChange={(e) => handlePriceDetailChange("include", i, e.target.value)}
-                                                        placeholder="Enter Include"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
 
-                                        <div className="flex flex-col mb-2">
-                                            <label className="block text-gray-700 text-base font-semibold mb-2">Uninclude</label>
-                                            {formData.priceDetail.uninclude.map((uninclude, i) => (
-                                                <div key={i} className="flex items-center mb-2">
-                                                    <input
-                                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                        value={uninclude}
-                                                        onChange={(e) => handlePriceDetailChange("uninclude", i, e.target.value)}
-                                                        placeholder="Enter Uninclude"
-                                                    />
+                                            <div className="flex flex-col mb-2">
+                                                <div className="flex flex-col mb-2">
+                                                    {formData.priceDetail.uninclude.map((uninclude, i) => (
+                                                        <div key={i} className="flex items-center mb-2">
+                                                            <input
+                                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                                value={uninclude}
+                                                                onChange={(e) => handlePriceDetailChange("uninclude", i, e.target.value)}
+                                                                placeholder="Enter Uninclude"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="ml-4 bg-red-500 text-white px-2 py-1 rounded shadow"
+                                                                onClick={() => removePriceDetail(i)}
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
+
+                                            </div>
                                         </div>
 
                                         <button
@@ -668,7 +905,7 @@ function Page() {
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="categories">Categories</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="categories">Categories <span className='text-red-600'>*</span></label>
                                         <select
                                             multiple
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -677,12 +914,14 @@ function Page() {
                                             onChange={handleCategoryChange}
                                             value={formData.categories}
                                         >
+
                                             {categoriesOptions.map(category => (
                                                 <option key={category} value={category}>
                                                     {category}
                                                 </option>
                                             ))}
                                         </select>
+                                        {newErrors.categories && <p className="text-red-700 text-sm">{newErrors.categories}</p>}
 
                                         <div className="mt-4">
                                             <h2 className="text-lg font-semibold text-gray-800">Selected Categories:</h2>
@@ -699,9 +938,8 @@ function Page() {
                                             </ul>
                                         </div>
                                     </div>
-
                                     <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="departure">Departure</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="departure">Departure <span className='text-red-600'>*</span></label>
                                         <input
                                             type="text"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -711,10 +949,11 @@ function Page() {
                                             placeholder="Enter departure time"
                                             value={formData.departure}
                                         />
+                                        {newErrors.departure && <p className="text-red-700 text-sm">{newErrors.departure}</p>}
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="arrival">Arrival</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="arrival">Arrival <span className='text-red-600'>*</span></label>
                                         <input
                                             type="text"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -724,10 +963,11 @@ function Page() {
                                             placeholder="Enter arrival time"
                                             value={formData.arrival}
                                         />
+                                        {newErrors.arrival && <p className="text-red-700 text-sm">{newErrors.arrival}</p>}
                                     </div>
 
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="description">Description</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="description">Description <span className='text-red-600'>*</span></label>
                                         <textarea
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                             name="description"
@@ -736,6 +976,7 @@ function Page() {
                                             placeholder="Enter description"
                                             value={formData.description}
                                         />
+                                        {newErrors.description && <p className="text-red-700 text-sm">{newErrors.description}</p>}
                                     </div>
 
                                     <div className="flex flex-col col-span-2">
@@ -751,23 +992,20 @@ function Page() {
                                     </div>
 
                                     <div className="flex flex-col mb-4">
-                                        <h2 className="text-md font-semibold mb-2 text-gray-800">Ticket Of Visit</h2>
-
+                                        <h2 className="text-md font-semibold mb-2 text-gray-800">Type Of Visit</h2>
                                         <div className="flex flex-col mb-2">
-                                            <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="ticketTypeOf">Type Of</label>
                                             <input
                                                 type="text"
                                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 id="ticketTypeOf"
-                                                name="typeOf"
-                                                value={formData.typeOfVisit.typeOf}
+                                                name="typeof"
+                                                value={formData.typeOfVisit.typeof}
                                                 onChange={handleTicketOfVisitChange}
-                                                placeholder="Enter type of ticket"
-                                            />
+                                                placeholder="Enter type of ticket" />
                                         </div>
 
                                         <div className="flex flex-col mb-2">
-                                            <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="ticketMaxPeople">Max People</label>
+                                            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="ticketMaxPeople">Max People</label>
                                             <input
                                                 type="number"
                                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -775,13 +1013,12 @@ function Page() {
                                                 name="maxPeople"
                                                 value={formData.typeOfVisit.maxPeople}
                                                 onChange={handleTicketOfVisitChange}
-                                                placeholder="Enter max number of people"
-                                            />
+                                                placeholder="Enter max number of people" />
                                         </div>
                                     </div>
 
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="duration">Duration</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="duration">Duration <span className='text-red-600'>*</span></label>
                                         <input
                                             type="text"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -789,36 +1026,41 @@ function Page() {
                                             id="duration"
                                             onChange={handleChange}
                                             placeholder="Enter duration"
-                                            value={formData.duration}
-                                        />
+                                            value={formData.duration} />
+                                        {newErrors.duration && <p className="text-red-700 text-sm">{newErrors.duration}</p>}
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="withGuider">With Guider</label>
+                                    <div className="flex items-center mb-2">
+                                        <label
+                                            className="text-gray-700 text-base font-semibold mr-6"
+                                            htmlFor="withGuider">
+                                            With Guider
+                                        </label>
                                         <input
                                             type="checkbox"
                                             className="form-checkbox"
                                             name="withGuider"
                                             id="withGuider"
                                             onChange={handleChange}
-                                            checked={formData.withGuider}
-                                        />
+                                            checked={formData.withGuider} />
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="withBus">With Bus</label>
+                                    <div className="flex items-center mb-2">
+                                        <label
+                                            className="text-gray-700 text-base font-semibold mr-6"
+                                            htmlFor="withBus">
+                                            With Bus
+                                        </label>
                                         <input
                                             type="checkbox"
                                             className="form-checkbox"
                                             name="withBus"
                                             id="withBus"
                                             onChange={handleChange}
-                                            checked={formData.withBus}
-                                        />
+                                            checked={formData.withBus} />
                                     </div>
-
+                                    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="ticketPrice">Ticket Price <span className='text-red-600'>*</span></label>
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="ticketPrice">Ticket Price</label>
                                         <input
                                             type="number"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -826,63 +1068,52 @@ function Page() {
                                             id="ticketPrice"
                                             onChange={handleChange}
                                             placeholder="Enter ticket price"
-                                            value={formData.ticketPrice}
-                                        />
+                                            value={formData.ticketPrice} />
+                                        {newErrors.ticketPrice && <p className="text-red-700 text-sm">{newErrors.ticketPrice}</p>}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <input
+                                            type="number"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            name="adult"
+                                            id="adultPrice"
+                                            onChange={handlePriceForChange}
+                                            value={formData.priceFor.adult || ''}
+                                            placeholder="Enter price for adults" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <input
+                                            type="number"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            name="child"
+                                            id="childPrice"
+                                            onChange={handlePriceForChange}
+                                            value={formData.priceFor.child || ''}
+                                            placeholder="Enter price for children" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <input
+                                            type="number"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            name="retired"
+                                            id="retiredPrice"
+                                            onChange={handlePriceForChange}
+                                            value={formData.priceFor.retired || ''}
+                                            placeholder="Enter price for retired" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <input
+                                            type="number"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            name="student"
+                                            id="studentPrice"
+                                            onChange={handlePriceForChange}
+                                            value={formData.priceFor.student || ''}
+                                            placeholder="Enter price for students" />
                                     </div>
 
-                                    <div className="flex flex-col">
-    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="adultPrice">Adult Price</label>
-    <input
-        type="number"
-        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        name="adult"
-        id="adultPrice"
-        onChange={handlePriceForChange}
-        value={formData.priceFor.adult || ''}
-        placeholder="Enter price for adults"
-    />
-</div>
-<div className="flex flex-col">
-    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="childPrice">Child Price</label>
-    <input
-        type="number"
-        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        name="child"
-        id="childPrice"
-        onChange={handlePriceForChange}
-        value={formData.priceFor.child || ''}
-        placeholder="Enter price for children"
-    />
-</div>
-<div className="flex flex-col">
-    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="retiredPrice">Retired Price</label>
-    <input
-        type="number"
-        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        name="retired"
-        id="retiredPrice"
-        onChange={handlePriceForChange}
-        value={formData.priceFor.retired || ''}
-        placeholder="Enter price for retired"
-    />
-</div>
-<div className="flex flex-col">
-    <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="studentPrice">Student Price</label>
-    <input
-        type="number"
-        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        name="student"
-        id="studentPrice"
-        onChange={handlePriceForChange}
-        value={formData.priceFor.student || ''}
-        placeholder="Enter price for students"
-    />
-</div>
-
-                                    {/* Extra fields */}
-
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="excursionType">Excursion Type</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="excursionType">Excursion Type <span className='text-red-600'>*</span></label>
                                         <input
                                             type="text"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -890,29 +1121,28 @@ function Page() {
                                             id="excursionType"
                                             onChange={handleChange}
                                             placeholder="Enter excursion type"
-                                            value={formData.excursionType}
-                                        />
+                                            value={formData.excursionType} />
+                                        {newErrors.excursionType && <p className="text-red-700 text-sm">{newErrors.excursionType}</p>}
                                     </div>
                                     <div className="flex flex-col col-span-2">
-                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="keyPoints">keyPoints</label>
+                                        <label className="block text-gray-700 text-base font-semibold mb-2" htmlFor="keyPoints">keyPoints <span className='text-red-600'>*</span></label>
                                         <select
                                             multiple
                                             id="keyPoints"
                                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-4"
                                             onChange={handlekeyPointsChange}
-                                            value={formData.keyPoints.map(kp => kp.label)}
-                                        >
+                                            value={formData.keyPoints.map(kp => kp.label)}>
                                             {keyPointsOptions.map((option, index) => (
                                                 <option
                                                     key={index}
                                                     value={option.label}
-                                                    data-color={option.color}
-                                                >
+                                                    data-color={option.color}>
                                                     {option.label}
                                                 </option>
 
                                             ))}
                                         </select>
+                                        {newErrors.keyPoints && <p className="text-red-700 text-sm">{newErrors.keyPoints}</p>}
                                     </div>
                                     <div className="flex flex-col col-span-2 mt-4">
                                         <label className="block text-gray-700 text-base font-semibold mb-2">Selected keyPoints</label>
@@ -937,13 +1167,11 @@ function Page() {
                                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                     placeholder="Enter start value"
                                                     value={item}
-                                                    onChange={(e) => handleConsiderChange(index, e)}
-                                                />
+                                                    onChange={(e) => handleConsiderChange(index, e)} />
                                                 <button
                                                     type="button"
                                                     className="bg-red-500 text-white py-1 px-2 rounded"
-                                                    onClick={() => removeConsider(index)}
-                                                >
+                                                    onClick={() => removeConsider(index)}>
                                                     Remove
                                                 </button>
                                             </div>
@@ -951,8 +1179,7 @@ function Page() {
                                         <button
                                             type="button"
                                             className="bg-blue-500 text-white py-2 px-4 rounded"
-                                            onClick={addConsider}
-                                        >
+                                            onClick={addConsider}>
                                             Add More Fields
                                         </button>
                                     </div>
@@ -967,21 +1194,18 @@ function Page() {
                                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                     placeholder="Enter description"
                                                     value={item.description}
-                                                    onChange={(e) => handleProgramChange(index, e)}
-                                                />
+                                                    onChange={(e) => handleProgramChange(index, e)} />
                                                 <input
                                                     type="number"
                                                     name="duration"
                                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                     placeholder="Enter duration"
                                                     value={item.duration}
-                                                    onChange={(e) => handleProgramChange(index, e)}
-                                                />
+                                                    onChange={(e) => handleProgramChange(index, e)} />
                                                 <button
                                                     type="button"
                                                     className="bg-red-500 text-white py-1 px-2 mt-2 rounded"
-                                                    onClick={() => removeProgram(index)}
-                                                >
+                                                    onClick={() => removeProgram(index)}>
                                                     Remove
                                                 </button>
                                             </div>
@@ -989,8 +1213,7 @@ function Page() {
                                         <button
                                             type="button"
                                             className="bg-blue-500 text-white py-2 px-4 rounded"
-                                            onClick={addProgram}
-                                        >
+                                            onClick={addProgram}>
                                             Add More Program
                                         </button>
                                     </div>
@@ -1003,13 +1226,11 @@ function Page() {
                                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                     placeholder="Enter start value"
                                                     value={item}
-                                                    onChange={(e) => handleStartChange(index, e)}
-                                                />
+                                                    onChange={(e) => handleStartChange(index, e)} />
                                                 <button
                                                     type="button"
                                                     className="bg-red-500 text-white py-1 px-2 rounded"
-                                                    onClick={() => removeStart(index)}
-                                                >
+                                                    onClick={() => removeStart(index)}>
                                                     Remove
                                                 </button>
                                             </div>
@@ -1017,8 +1238,7 @@ function Page() {
                                         <button
                                             type="button"
                                             className="bg-blue-500 text-white py-2 px-4 rounded"
-                                            onClick={addStart}
-                                        >
+                                            onClick={addStart}>
                                             Add More Start
                                         </button>
                                     </div>
@@ -1027,8 +1247,7 @@ function Page() {
                                     <button
                                         type="submit"
                                         className={`bg-blue-500 text-white py-2 px-4 rounded ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        disabled={loading}
-                                    >
+                                        disabled={loading}>
                                         {loading ? 'Submitting...' : 'Submit'}
                                     </button>
                                 </div>
