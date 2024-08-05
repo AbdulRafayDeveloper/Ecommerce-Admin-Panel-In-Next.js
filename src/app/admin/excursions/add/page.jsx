@@ -10,6 +10,7 @@ import LinkingWithSidebar from '../../components/LinkingWithSidebar';
 import { decodeJWT } from "../../components/DecodeJWT";
 import 'select2/dist/css/select2.min.css';
 import 'select2';
+const baseURL = "http://localhost:5000";
 
 function Page() {
     const router = useRouter();
@@ -54,6 +55,7 @@ function Page() {
             uninclude: [""]
         }
     });
+
     useEffect(() => {
         const decodedData = decodeJWT();
         if (!(decodedData && decodedData.token && (decodedData.role === "admin" || decodedData.role === "employee"))) {
@@ -74,8 +76,11 @@ function Page() {
         const fetchCategory = async () => {
             try {
                 const response = await axios.get("http://localhost:5000/api/excursions/categories");
-                const labels = response.data.map(item => item.label);
-                setCategory(labels);
+                const categories = response.data.map(item => ({
+                    label: item.label,
+                    icon: item.icon.replace(baseURL, '')
+                }));
+                setCategory(categories);
             } catch (error) {
                 console.error("Error fetching categories:", error);
             }
@@ -135,9 +140,7 @@ function Page() {
         validateForm(formData);
     }, [formData]);
 
-
     const validateForm = (formData) => {
-
         let isValid = true
 
         if (!formData.title || formData.title === "") {
@@ -158,13 +161,9 @@ function Page() {
 
         if (formData.address.country === "" || formData.address.country === "default") {
             isValid = false;
-            console.log(formData.address.country)
-
             errors['address.country'] = "Fill in the country"
         } else {
             errors['address.country'] = "";
-
-
         }
 
         if (!formData.departure || formData.departure === "") {
@@ -284,21 +283,13 @@ function Page() {
         const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
 
         setFormData(prev => {
+            const updatedCategories = selectedOptions.map(option => {
+                const [label, icon] = option.split('|');
+                return { label, icon };
+            });
 
-            const categoriesSet = new Set(prev.categories);
-            const updatedCategories = selectedOptions.reduce((acc, option) => {
-                if (categoriesSet.has(option)) {
-                    categoriesSet.delete(option);
-                } else {
-
-                    categoriesSet.add(option);
-                }
-                return Array.from(categoriesSet);
-            }, [...prev.categories]);
-
-            validateForm(formData)
+            validateForm(prev);
             return { ...prev, categories: updatedCategories };
-
         });
     };
 
@@ -623,9 +614,11 @@ function Page() {
                 submissionData.append('program', JSON.stringify(formData.program));
                 submissionData.append('start', JSON.stringify(formData.start));
 
-                submissionData.forEach((value, key) => {
-                    console.log(key, value);
-                });
+                // submissionData.forEach((value, key) => {
+                //     console.log(key, value);
+                // });
+
+                console.log("submissionData.categories: ", JSON.stringify(formData.categories));
 
                 const response = await axios.post("http://localhost:5000/api/excursions", submissionData, {
                     headers: {
@@ -866,7 +859,6 @@ function Page() {
                                                             onChange={(e) => handlePriceDetailChange("include", i, e.target.value)}
                                                             placeholder="Enter Include"
                                                         />
-
                                                     </div>
                                                 ))}
                                             </div>
@@ -912,24 +904,22 @@ function Page() {
                                             name="categories"
                                             id="categories"
                                             onChange={handleCategoryChange}
-                                            value={formData.categories}
+                                            value={formData.categories.map(category => `${category.label}|${category.icon}`)}
                                         >
-
                                             {categoriesOptions.map(category => (
-                                                <option key={category} value={category}>
-                                                    {category}
+                                                <option key={category.label} value={`${category.label}|${category.icon}`}>
+                                                    {category.label}
                                                 </option>
                                             ))}
                                         </select>
                                         {newErrors.categories && <p className="text-red-700 text-sm">{newErrors.categories}</p>}
-
                                         <div className="mt-4">
                                             <h2 className="text-lg font-semibold text-gray-800">Selected Categories:</h2>
                                             <ul className="list-disc pl-5 mt-2">
                                                 {formData.categories.length > 0 ? (
                                                     formData.categories.map((category, index) => (
-                                                        <li key={index} className="text-gray-700">
-                                                            {category}
+                                                        <li key={index} className="text-gray-700 flex items-center">
+                                                            {category.label}
                                                         </li>
                                                     ))
                                                 ) : (
